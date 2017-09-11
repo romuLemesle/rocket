@@ -1,4 +1,6 @@
-# rocket
+# Rocket.chat
+
+Rocket.chat integrations
 
 ## BitBucket
 

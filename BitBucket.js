@@ -23,15 +23,19 @@ function pullRequestAttachment(request, color) {
     color: color,
     title: request.content.pullrequest.title,
     title_link: request.content.pullrequest.link,
-    fields: [{
-      short: false,
-      title: 'Project',
-      value: '['+request.content.repository.project.key+'] '+request.content.repository.project.name
-    }, {
-      short: false,
-      title: 'Repository',
-      value: '['+request.content.repository.slug+']('+request.content.repository.links.self[0].href+')'
-    }]
+    fields: newFields(request)
+  }];
+}
+
+function newFields(request) {
+  return [{
+    short: false,
+    title: 'Project',
+    value: '['+request.content.repository.project.key+'] '+request.content.repository.project.name
+  }, {
+    short: false,
+    title: 'Repository',
+    value: '['+request.content.repository.slug+']('+request.content.repository.links.self[0].href+')'
   }];
 }
 
@@ -40,23 +44,39 @@ const processors = {
     return pullRequestMessage(request, ':speech_balloon:', '#4fd1d9', request.content.comment);
   },
   pullrequest_created(request) {
-    return pullRequestMessage(request, ':speech_balloon:', request.content.comment);
+    return pullRequestMessage(request, ':new:', '#ed7612');
   },
   pullrequest_updated(request) {
+    return pullRequestMessage(request, ':arrows_counterclockwise:', '#006dae');
   },
   pullrequest_fulfilled(request) {
+    return pullRequestMessage(request, ':white_check_mark:', '#7ab51d');
   },
   pullrequest_rejected(request) {
+    return pullRequestMessage(request, ':o2:', '#e81c27');
+  },
+  repo_push(request) {
+    let change = request.content.push.changes[0];
+    //console.log('>>> PUSH: '+JSON.stringify(change));
+    let msg = newMessage(request, ':arrow_heading_down:');
+   	msg.content.attachments = [{
+      collapsed: true,
+      color: (change.created ? '#41f45c' : (change.closed ? '#f44141' : '#4155f4')),
+      title: change.new.name+'/'+change.new.target.hash,
+      title_link: request.content.repository.links.self[0].href.replace('/browse', '/commits/')+change.new.target.hash,
+      fields: newFields(request)
+    }];
+    return msg;
   }
 };
 
 class Script {
   process_incoming_request({ request }) {
-    console.log('Trace: '+JSON.stringify(request));
-    let result = {
-      error: {
-        success: false,
-        message: 'Event not implemented: '+JSON.stringify(request)
+    //console.log('>>> REQUEST: '+JSON.stringify(request));
+    let result = { 
+      content: {
+        emoji: ':no_entry_sign:',
+        text: JSON.stringify(request)
       }
     };
     if (request.headers['x-event-key']) {

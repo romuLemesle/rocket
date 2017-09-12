@@ -3,7 +3,8 @@ function newMessage(request, emoji, text) {
     content: {
       username: request.content.actor.displayName,
       emoji: emoji,
-      parseUrls: false
+      parseUrls: false,
+      alias: request.content.repository.slug
     }
   };
   if ( text ) 
@@ -58,11 +59,13 @@ const processors = {
   repo_push(request) {
     let change = request.content.push.changes[0];
     //console.log('>>> PUSH: '+JSON.stringify(change));
-    let msg = newMessage(request, ':arrow_heading_down:');
+    let msg = newMessage(request, ':arrow_heading_down:', 
+           'Push on `'+request.content.repository.slug+
+           '` branch `'+change.new.name+'`');
    	msg.content.attachments = [{
       collapsed: true,
       color: (change.created ? '#41f45c' : (change.closed ? '#f44141' : '#4155f4')),
-      title: change.new.name+'/'+change.new.target.hash,
+      title: change.new.target.hash,
       title_link: request.content.repository.links.self[0].href.replace('/browse', '/commits/')+change.new.target.hash,
       fields: newFields(request)
     }];

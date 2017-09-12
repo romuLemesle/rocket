@@ -1,3 +1,4 @@
+/*jshint  esnext:true*/
 function newMessage(request, emoji, text) {
   let msg = { 
     content: {
@@ -76,17 +77,21 @@ const processors = {
 class Script {
   process_incoming_request({ request }) {
     //console.log('>>> REQUEST: '+JSON.stringify(request));
-    let result = { 
-      content: {
-        emoji: ':no_entry_sign:',
-        text: JSON.stringify(request)
+    const data = request.content;
+    try {
+      if (request.headers['x-event-key']) {
+        const key = request.headers['x-event-key'].replace(':', '_');
+        if ( processors[key] )
+          return processors[key](request);
       }
-    };
-    if (request.headers['x-event-key']) {
-      const key = request.headers['x-event-key'].replace(':', '_');
-      if ( processors[key] )
-      	result = processors[key](request);
+    } catch(e) {
+      console.log('bitbucket error', e);
+      return {
+        error: {
+          success: false,
+          message: `${e.message || e} ${JSON.stringify(data)}`
+        }
+      };
     }
-    return result;
   }
 }
